@@ -6,8 +6,17 @@ import { Workout, WorkoutType, WorkoutConfig } from './types';
 import { History, LayoutGrid, Dumbbell, Trash2 } from 'lucide-react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Preferences } from '@capacitor/preferences';
+import { registerPlugin } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
-const STORAGE_KEY = 'fitwidget_workouts';
+// Define Interface for the Plugin
+interface WidgetPlugin {
+  update(): Promise<void>;
+}
+const WidgetPlugin = registerPlugin<WidgetPlugin>('Widget');
+
+// const STORAGE_KEY = 'fitwidget_workouts'; // No longer using localStorage for workouts
+const HISTORY_FILE = 'history.json';
 const CONFIG_STORAGE_KEY = 'fitwidget_configs';
 
 // Mock initial data if storage is empty
@@ -56,60 +65,142 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'widget' | 'history'>('widget');
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Helper for notifications
+  const notifyUser = (message: string) => {
+    alert(message); // Simple alert for now
+  };
+
+  // Helper: Save to File
+  const saveWorkoutsToFile = async (data: Workout[]) => {
+    try {
+      await Filesystem.writeFile({
+        path: HISTORY_FILE,
+        data: JSON.stringify(data),
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+      });
+    } catch (e) {
+      console.error('Error saving history file', e);
+    }
+  };
+
+  // Helper: Load from File
+  const loadWorkoutsFromFile = async () => {
+    try {
+      const result = await Filesystem.readFile({
+        path: HISTORY_FILE,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+      });
+      if (result.data) {
+        const parsed = JSON.parse(result.data as string);
+        setWorkouts(parsed);
+      }
+    } catch (e) {
+      console.log('No history file found (or error reading), starting fresh.', e);
+      setWorkouts([]);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
 
   // Handle Deep Links
+  const lastProcessedTime = React.useRef<number>(0);
+
   useEffect(() => {
-    CapacitorApp.addListener('appUrlOpen', data => {
+    // We use a promise here to ensure we capture the handle even if it resolves after unmount
+    const handlePromise = CapacitorApp.addListener('appUrlOpen', async data => {
+      const now = Date.now();
+      // DEBOUNCE: Ignore events within 2 seconds of the last one
+      if (now - lastProcessedTime.current < 2000) {
+        console.log("Ignoring duplicate deep link event");
+        return;
+      }
+      lastProcessedTime.current = now;
+
       const url = data.url;
       if (url.includes('fitwidget://log/')) {
         const typeStr = url.split('fitwidget://log/')[1];
-        // For now, we just open the modal. Ideally, we could pre-select the type.
-        // But the modal doesn't support pre-selection prop yet, so we just open it.
-        // If we wanted to be fancier, we'd pass this type to the modal.
-        setIsModalOpen(true);
+
+        // Auto-Add Logic
+        const workoutType = typeStr === 'S.ldr' ? WorkoutType.SHOULDERS
+          : typeStr as WorkoutType;
+
+        const newWorkout: Workout = {
+          id: crypto.randomUUID(),
+          type: workoutType,
+          durationMinutes: 60, // Default duration
+          date: new Date().toISOString(),
+          intensity: 'Medium', // Default intensity
+          notes: 'Quick log from widget'
+        };
+
+        setWorkouts(prev => {
+          // Robust State-Based De-duplication
+          if (prev.length > 0) {
+            const last = prev[0];
+            const now = Date.now();
+            const lastTime = new Date(last.date).getTime();
+
+            if (last.type === workoutType && (now - lastTime < 3000)) {
+              console.log("Blocking duplicate workout add (State check matches recent entry)");
+              return prev;
+            }
+          }
+          return [newWorkout, ...prev];
+        });
+
+        notifyUser(`Logged ${workoutType} workout!`);
+
       } else if (url.includes('fitwidget://add') || url.includes('fitwidget://open')) {
         setIsModalOpen(true);
       }
     });
+
+    return () => {
+      // Clean up the listener when component unmounts
+      handlePromise.then(handle => handle.remove()).catch(e => console.error("Failed to remove listener", e));
+    };
   }, []);
 
-  // Update Widget Data in Shared Preferences
+  // Sync Widget whenever workouts change
   useEffect(() => {
-    const updateWidgetData = async () => {
+    const syncWidget = async () => {
       if (workouts.length > 0) {
         const last = workouts[0];
         const name = configs[last.type]?.label || last.type;
         const date = new Date(last.date).toLocaleDateString();
         const text = `Last: ${name} (${date})`;
 
-        await Preferences.set({
-          key: 'widget_last_workout',
-          value: text,
-        });
+        await Preferences.set({ key: 'widget_last_workout', value: text });
       } else {
-        await Preferences.set({
-          key: 'widget_last_workout',
-          value: 'No recent workouts',
-        });
+        await Preferences.set({ key: 'widget_last_workout', value: 'No recent workouts' });
+      }
+
+      // Force Native Widget Update
+      try {
+        await WidgetPlugin.update();
+      } catch (e) {
+        console.error("Widget update failed", e);
       }
     };
-    updateWidgetData();
+    syncWidget();
   }, [workouts, configs]);
 
-  // Load Workouts
+  // Load Workouts on Mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setWorkouts(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse workouts", e);
-        setWorkouts(MOCK_WORKOUTS);
-      }
-    } else {
-      setWorkouts(MOCK_WORKOUTS);
-    }
+    loadWorkoutsFromFile();
   }, []);
+
+  // Save Workouts Effect
+  useEffect(() => {
+    // Only save if initial load is complete
+    if (isLoaded) {
+      saveWorkoutsToFile(workouts);
+    }
+  }, [workouts, isLoaded]);
 
   // Load Configs
   useEffect(() => {
@@ -122,13 +213,6 @@ export default function App() {
       }
     }
   }, []);
-
-  // Save Workouts
-  useEffect(() => {
-    if (workouts.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
-    }
-  }, [workouts]);
 
   // Save Configs
   useEffect(() => {
