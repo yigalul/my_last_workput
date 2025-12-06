@@ -5,6 +5,7 @@ import { EditConfigModal } from './components/EditConfigModal';
 import { Workout, WorkoutType, WorkoutConfig } from './types';
 import { History, LayoutGrid, Dumbbell, Trash2 } from 'lucide-react';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
 
 const STORAGE_KEY = 'fitwidget_workouts';
 const CONFIG_STORAGE_KEY = 'fitwidget_configs';
@@ -59,11 +60,41 @@ export default function App() {
   // Handle Deep Links
   useEffect(() => {
     CapacitorApp.addListener('appUrlOpen', data => {
-      if (data.url.includes('fitwidget://add')) {
+      const url = data.url;
+      if (url.includes('fitwidget://log/')) {
+        const typeStr = url.split('fitwidget://log/')[1];
+        // For now, we just open the modal. Ideally, we could pre-select the type.
+        // But the modal doesn't support pre-selection prop yet, so we just open it.
+        // If we wanted to be fancier, we'd pass this type to the modal.
+        setIsModalOpen(true);
+      } else if (url.includes('fitwidget://add') || url.includes('fitwidget://open')) {
         setIsModalOpen(true);
       }
     });
   }, []);
+
+  // Update Widget Data in Shared Preferences
+  useEffect(() => {
+    const updateWidgetData = async () => {
+      if (workouts.length > 0) {
+        const last = workouts[0];
+        const name = configs[last.type]?.label || last.type;
+        const date = new Date(last.date).toLocaleDateString();
+        const text = `Last: ${name} (${date})`;
+
+        await Preferences.set({
+          key: 'widget_last_workout',
+          value: text,
+        });
+      } else {
+        await Preferences.set({
+          key: 'widget_last_workout',
+          value: 'No recent workouts',
+        });
+      }
+    };
+    updateWidgetData();
+  }, [workouts, configs]);
 
   // Load Workouts
   useEffect(() => {

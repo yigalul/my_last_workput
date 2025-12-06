@@ -5,25 +5,84 @@
     android:background="@drawable/ic_launcher_background"
     android:padding="8dp">
 
+    <!-- Title -->
     <TextView
         android:id="@+id/appwidget_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="0dp"
         android:text="My Last Workout"
         android:textColor="#FFFFFF"
-        android:textSize="12sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/btn_quick_add"
+    <!-- Last Workout Display -->
+    <TextView
+        android:id="@+id/last_workout_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:backgroundTint="#4F46E5"
-        android:text="+ Log Workout"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp" />
+        android:layout_below="@id/appwidget_text"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:text="No workouts yet"
+        android:textColor="#A5B4FC"
+        android:textSize="12sp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Button Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:paddingTop="4dp">
+
+        <Button
+            android:id="@+id/btn_chest"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:backgroundTint="#4F46E5"
+            android:text="Chest"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:padding="0dp" 
+            android:insetTop="0dp"
+            android:insetBottom="0dp"/>
+
+        <Button
+            android:id="@+id/btn_back"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:backgroundTint="#4F46E5"
+            android:text="Back"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:padding="0dp" 
+            android:insetTop="0dp"
+            android:insetBottom="0dp"/>
+
+        <Button
+            android:id="@+id/btn_shoulders"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:backgroundTint="#4F46E5"
+            android:text="S.ldr"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:padding="0dp" 
+            android:insetTop="0dp"
+            android:insetBottom="0dp"/>
+            
+    </LinearLayout>
 
 </RelativeLayout>
