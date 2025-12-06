@@ -1,16 +1,21 @@
-export enum WorkoutType {
-  CHEST = 'Chest',
-  BACK = 'Back',
-  SHOULDERS = 'Shoulders',
+export type WorkoutType = string;
+
+// Helper constants for default types (to keep some backwards compatibility in code refs)
+export const WorkoutTypes = {
+  CHEST: 'Chest',
+  BACK: 'Back',
+  SHOULDERS: 'Shoulders',
+};
+
+export interface MuscleGroupConfig {
+  muscle: string;
+  exerciseCount: number;
 }
 
 export interface WorkoutConfig {
   id: WorkoutType;
-  label: string;          // e.g., "Chest Day" or "Push"
-  primaryMuscle: string;  // e.g., "Chest"
-  secondaryMuscle: string;// e.g., "Triceps"
-  primaryCount: number;   // e.g., 4
-  secondaryCount: number; // e.g., 3
+  label: string;
+  muscleGroups: MuscleGroupConfig[];
 }
 
 export interface Workout {

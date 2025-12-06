@@ -11,7 +11,7 @@ interface AddWorkoutModalProps {
 }
 
 export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({ isOpen, onClose, onSave, workoutConfigs }) => {
-  const [type, setType] = useState<WorkoutType>(WorkoutType.CHEST);
+  const [type, setType] = useState<WorkoutType>(Object.keys(workoutConfigs)[0] || 'Chest');
   const [duration, setDuration] = useState<string>('30');
   const [intensity, setIntensity] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [notes, setNotes] = useState('');
@@ -36,7 +36,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({ isOpen, onClos
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
         >
@@ -46,21 +46,20 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({ isOpen, onClos
         <h2 className="text-xl font-bold text-white mb-6">Log Workout</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
+
           {/* Type Selection */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Type</label>
             <div className="grid grid-cols-3 gap-2">
-              {Object.values(WorkoutType).map((t) => (
+              {Object.keys(workoutConfigs).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setType(t)}
-                  className={`py-2 px-1 rounded-xl text-sm font-medium transition-all ${
-                    type === t 
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' 
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
+                  className={`py-2 px-1 rounded-xl text-sm font-medium transition-all ${type === t
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
                 >
                   {workoutConfigs[t]?.label || t}
                 </button>

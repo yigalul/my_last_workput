@@ -1,6 +1,6 @@
 import React from 'react';
 import { Activity, Shield, Anchor, Trophy } from 'lucide-react';
-import { WorkoutType } from '../types';
+import { WorkoutType, WorkoutTypes } from '../types';
 
 interface WorkoutIconProps {
   type: WorkoutType;
@@ -9,11 +9,11 @@ interface WorkoutIconProps {
 
 export const WorkoutIcon: React.FC<WorkoutIconProps> = ({ type, className = "" }) => {
   switch (type) {
-    case WorkoutType.CHEST:
+    case WorkoutTypes.CHEST:
       return <Shield className={className} />;
-    case WorkoutType.BACK:
+    case WorkoutTypes.BACK:
       return <Anchor className={className} />;
-    case WorkoutType.SHOULDERS:
+    case WorkoutTypes.SHOULDERS:
       return <Trophy className={className} />;
     default:
       return <Activity className={className} />;

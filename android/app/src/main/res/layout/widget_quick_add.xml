@@ -31,58 +31,15 @@
         android:ellipsize="end"
         android:maxLines="1" />
 
-    <!-- Button Container -->
-    <LinearLayout
+    <!-- Widget List -->
+    <ListView
+        android:id="@+id/widget_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:paddingTop="4dp">
-
-        <Button
-            android:id="@+id/btn_chest"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:backgroundTint="#4F46E5"
-            android:text="Chest"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:padding="0dp" 
-            android:insetTop="0dp"
-            android:insetBottom="0dp"/>
-
-        <Button
-            android:id="@+id/btn_back"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:backgroundTint="#4F46E5"
-            android:text="Back"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:padding="0dp" 
-            android:insetTop="0dp"
-            android:insetBottom="0dp"/>
-
-        <Button
-            android:id="@+id/btn_shoulders"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:backgroundTint="#4F46E5"
-            android:text="S.ldr"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:padding="0dp" 
-            android:insetTop="0dp"
-            android:insetBottom="0dp"/>
-            
-    </LinearLayout>
-
+        android:layout_height="match_parent"
+        android:layout_below="@id/last_workout_text"
+        android:layout_marginTop="8dp"
+        android:paddingBottom="4dp"
+        android:clipToPadding="false"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="6dp" />
 </RelativeLayout>

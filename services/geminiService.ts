@@ -12,7 +12,7 @@ const getClient = () => {
 export const generateWorkoutAdvice = async (workout: Workout): Promise<string> => {
   try {
     const ai = getClient();
-    
+
     const prompt = `
       You are an elite fitness coach speaking Hebrew. The user just finished a workout.
       
@@ -46,15 +46,19 @@ export const generateWorkoutAdvice = async (workout: Workout): Promise<string> =
 export const generateWorkoutPlan = async (config: WorkoutConfig): Promise<string> => {
   try {
     const ai = getClient();
-    
-    const instructions = `Create a plan for ${config.primaryMuscle} (Big Muscle) and ${config.secondaryMuscle} (Small Muscle). Include exactly ${config.primaryCount} distinct ${config.primaryMuscle} exercises and ${config.secondaryCount} distinct ${config.secondaryMuscle} exercises.`;
+
+    const groupsDesc = config.muscleGroups.map(g => `${g.muscle} (${g.exerciseCount} exercises)`).join(', ');
+    const totalCount = config.muscleGroups.reduce((acc, g) => acc + g.exerciseCount, 0);
+
+    const instructions = `Create a workout plan for the following muscle groups: ${groupsDesc}.`;
 
     const prompt = `
       ${instructions}
       
       Constraints:
       - Language: Hebrew.
-      - Total exercises: ${config.primaryCount + config.secondaryCount}.
+      - Total exercises: ${totalCount}.
+      - For each muscle group, include exactly the specified number of distinct exercises.
       - Format as a clear list: "Exercise Name (Hebrew): Sets x Reps".
       - Example line: "לחיצת חזה: 3x10".
       - No intro text, no outro text, no headers. Just the list of exercises.

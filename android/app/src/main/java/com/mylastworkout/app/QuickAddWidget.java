@@ -20,39 +20,46 @@ public class QuickAddWidget extends AppWidgetProvider {
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         
-        // 1. Get Shared Preferences (Capacitor stores data here)
+        // Construct RemoteViews
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_add);
+
+        // 1. Last Workout Text
         // Capacitor Preferences key prefix is usually "CapacitorStorage"
         SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
-        // The key we will use in App.tsx is "widget_last_workout"
-        String lastWorkout = prefs.getString("widget_last_workout", "No recent workout");
-
-        // 2. Setup Intents for Buttons
-        PendingIntent piChest = getPendingIntent(context, "fitwidget://log/Chest");
-        PendingIntent piBack = getPendingIntent(context, "fitwidget://log/Back");
-        PendingIntent piShoulders = getPendingIntent(context, "fitwidget://log/Shoulders");
-        
-        // Intent for clicking the title (opens main app)
-        PendingIntent piMain = getPendingIntent(context, "fitwidget://open");
-
-        // 3. Construct RemoteViews
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_add);
-        
-        // Set Text
+        String lastWorkout = prefs.getString("widget_last_workout", "No recent workouts");
         views.setTextViewText(R.id.last_workout_text, lastWorkout);
 
-        // Set Click Listeners
-        views.setOnClickPendingIntent(R.id.btn_chest, piChest);
-        views.setOnClickPendingIntent(R.id.btn_back, piBack);
-        views.setOnClickPendingIntent(R.id.btn_shoulders, piShoulders);
-        views.setOnClickPendingIntent(R.id.appwidget_text, piMain); // Clicking title opens app
+        // 2. Bind ListView Adapter
+        Intent serviceIntent = new Intent(context, WidgetService.class);
+        serviceIntent.setData(android.net.Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
+        views.setRemoteAdapter(R.id.widget_list, serviceIntent);
+        views.setEmptyView(R.id.widget_list, R.id.last_workout_text); // Fallback view? or separate empty view
 
-        // 4. Update the widget
+        // 3. Set PendingIntent Template for List Items
+        Intent clickIntent = new Intent(Intent.ACTION_VIEW);
+        // We don't set package or class here to let the system resolve it, 
+        // OR if we know it opens our app, we can be specific.
+        // Being specific is better.
+        clickIntent.setPackage(context.getPackageName());
+        clickIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        
+        PendingIntent clickPendingIntent = PendingIntent.getActivity(context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+        views.setPendingIntentTemplate(R.id.widget_list, clickPendingIntent);
+
+        // 4. Widget Title Click -> Open App
+        Intent openAppIntent = new Intent(Intent.ACTION_VIEW);
+        openAppIntent.setData(android.net.Uri.parse("fitwidget://open"));
+        openAppIntent.setPackage(context.getPackageName());
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(context, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.appwidget_text, openAppPendingIntent);
+
+        // 5. Update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_list);
     }
 
     private static PendingIntent getPendingIntent(Context context, String uriString) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uriString));
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 }

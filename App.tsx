@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Widget } from './components/Widget';
 import { AddWorkoutModal } from './components/AddWorkoutModal';
-import { EditConfigModal } from './components/EditConfigModal';
-import { Workout, WorkoutType, WorkoutConfig } from './types';
-import { History, LayoutGrid, Dumbbell, Trash2 } from 'lucide-react';
+import { EditConfigModal } from './components/EditConfigModal'; // Restored
+import { Workout, WorkoutType, WorkoutConfig, WorkoutTypes } from './types';
+import { History, LayoutGrid, Dumbbell, Trash2, Plus, X, Settings } from 'lucide-react'; // Added Plus, X, Settings
 import { App as CapacitorApp } from '@capacitor/app';
 import { Preferences } from '@capacitor/preferences';
 import { registerPlugin } from '@capacitor/core';
@@ -19,11 +19,13 @@ const WidgetPlugin = registerPlugin<WidgetPlugin>('Widget');
 const HISTORY_FILE = 'history.json';
 const CONFIG_STORAGE_KEY = 'fitwidget_configs';
 
+// ...
+
 // Mock initial data if storage is empty
 const MOCK_WORKOUTS: Workout[] = [
   {
     id: '1',
-    type: WorkoutType.CHEST,
+    type: WorkoutTypes.CHEST,
     durationMinutes: 45,
     date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // Yesterday
     intensity: 'High',
@@ -31,36 +33,36 @@ const MOCK_WORKOUTS: Workout[] = [
   }
 ];
 
-const DEFAULT_CONFIGS: Record<WorkoutType, WorkoutConfig> = {
-  [WorkoutType.CHEST]: {
-    id: WorkoutType.CHEST,
+const DEFAULT_CONFIGS: Record<string, WorkoutConfig> = {
+  [WorkoutTypes.CHEST]: {
+    id: WorkoutTypes.CHEST,
     label: 'Chest',
-    primaryMuscle: 'Chest',
-    secondaryMuscle: 'Triceps',
-    primaryCount: 4,
-    secondaryCount: 3
+    muscleGroups: [
+      { muscle: 'Chest', exerciseCount: 4 },
+      { muscle: 'Triceps', exerciseCount: 3 }
+    ]
   },
-  [WorkoutType.BACK]: {
-    id: WorkoutType.BACK,
+  [WorkoutTypes.BACK]: {
+    id: WorkoutTypes.BACK,
     label: 'Back',
-    primaryMuscle: 'Back',
-    secondaryMuscle: 'Biceps',
-    primaryCount: 4,
-    secondaryCount: 3
+    muscleGroups: [
+      { muscle: 'Back', exerciseCount: 4 },
+      { muscle: 'Biceps', exerciseCount: 3 }
+    ]
   },
-  [WorkoutType.SHOULDERS]: {
-    id: WorkoutType.SHOULDERS,
+  [WorkoutTypes.SHOULDERS]: {
+    id: WorkoutTypes.SHOULDERS,
     label: 'Shoulders',
-    primaryMuscle: 'Shoulders',
-    secondaryMuscle: 'Legs',
-    primaryCount: 4,
-    secondaryCount: 3
+    muscleGroups: [
+      { muscle: 'Shoulders', exerciseCount: 4 },
+      { muscle: 'Legs', exerciseCount: 3 }
+    ]
   }
 };
 
 export default function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [configs, setConfigs] = useState<Record<WorkoutType, WorkoutConfig>>(DEFAULT_CONFIGS);
+  const [configs, setConfigs] = useState<Record<string, WorkoutConfig>>(DEFAULT_CONFIGS);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -125,7 +127,7 @@ export default function App() {
         const typeStr = url.split('fitwidget://log/')[1];
 
         // Auto-Add Logic
-        const workoutType = typeStr === 'S.ldr' ? WorkoutType.SHOULDERS
+        const workoutType = typeStr === 'S.ldr' ? WorkoutTypes.SHOULDERS
           : typeStr as WorkoutType;
 
         const newWorkout: Workout = {
@@ -168,6 +170,7 @@ export default function App() {
   // Sync Widget whenever workouts change
   useEffect(() => {
     const syncWidget = async () => {
+      // 1. Update Last Workout Text
       if (workouts.length > 0) {
         const last = workouts[0];
         const name = configs[last.type]?.label || last.type;
@@ -178,6 +181,14 @@ export default function App() {
       } else {
         await Preferences.set({ key: 'widget_last_workout', value: 'No recent workouts' });
       }
+
+      // Convert configs map to ordered array
+      // Explicitly typing c as we iterate known record
+      const activeTypes = Object.values(configs).map((c: any) => ({
+        id: c.id,
+        label: c.label
+      }));
+      await Preferences.set({ key: 'widget_buttons', value: JSON.stringify(activeTypes) });
 
       // Force Native Widget Update
       try {
