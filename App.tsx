@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Widget } from './components/Widget';
 import { AddWorkoutModal } from './components/AddWorkoutModal';
 import { EditConfigModal } from './components/EditConfigModal';
 import { Workout, WorkoutType, WorkoutConfig } from './types';
 import { History, LayoutGrid, Dumbbell, Trash2 } from 'lucide-react';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const STORAGE_KEY = 'fitwidget_workouts';
 const CONFIG_STORAGE_KEY = 'fitwidget_configs';
@@ -55,6 +55,15 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'widget' | 'history'>('widget');
+
+  // Handle Deep Links
+  useEffect(() => {
+    CapacitorApp.addListener('appUrlOpen', data => {
+      if (data.url.includes('fitwidget://add')) {
+        setIsModalOpen(true);
+      }
+    });
+  }, []);
 
   // Load Workouts
   useEffect(() => {
